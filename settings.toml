@@ -1,0 +1,4 @@
+# Online learner related settings
+[default]
+number_of_learners = 2
+instances_are_shuffled = "True"
