@@ -1,0 +1,1 @@
+vowpalwabbit==8.11.0
