@@ -1,4 +1,8 @@
 # Online learner related settings
+# todo: move this to a section or something?
 [default]
 number_of_learners = 2
 instances_are_shuffled = "True"
+batch_size = 32
+feature_file_format="None"
+feature_processor_name = "MobileNet"
