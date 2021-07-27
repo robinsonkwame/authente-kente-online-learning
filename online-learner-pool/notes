@@ -1,0 +1,6 @@
+7/27
+
+Should be able to use Dockerized container here
+https://github.com/tiangolo/uvicorn-gunicorn-machine-learning-docker
+and
+https://github.com/kushalvala/fastapi-nlp/tree/main/FastAPI-Keras
