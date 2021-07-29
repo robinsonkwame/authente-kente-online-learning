@@ -7,6 +7,7 @@ from tensorflow.keras.applications.mobilenet_v2 import MobileNetV2
 from tensorflow.keras.applications import imagenet_utils
 from tensorflow.keras.preprocessing.image import img_to_array
 from tensorflow.keras.preprocessing.image import load_img
+from vowpalwabbit import pyvw
 
 class FeatureProcessor(ABC):
     def __init__(self,
@@ -97,12 +98,28 @@ class MobileNetFeatureProcessor(FeatureProcessor):
         return features
 
 def construct_vw_example(label, features):
-    return f"{label} |" + np.array2string(
+    return f"{label} | " + np.array2string(
         features,
         precision=4,
         separator=' ',
-        suppress_small=True
-    )
+        suppress_small=False
+    )[2:-2] # kinda shocked this leaves in brackets
 
 def load_image_into_numpy_array(data):
     return np.array(Image.open(BytesIO(data)))
+
+# so ideally i'd have a pool of these, use this with
+# Celery or something that matched sessions to a pool of
+# vowpalwabbits
+vw = pyvw.vw(quiet=True)
+
+def get_online_learner(session_key=None):
+    learner = None
+    if not session_key:
+        # for now
+        learner = vw
+
+    return learner
+
+
+

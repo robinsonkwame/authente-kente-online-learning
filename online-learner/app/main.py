@@ -12,7 +12,8 @@ from fastapi import FastAPI, File, UploadFile, Form
 from typing import List
 from fastapi.responses import HTMLResponse
 
-from .utils import FeatureProcessor, load_image_into_numpy_array, construct_vw_example
+from .utils import (FeatureProcessor, load_image_into_numpy_array, 
+                    construct_vw_example, get_online_learner)
 
 the_feature_processor = FeatureProcessor.create(
         feature_processor_name="MobileNet",
@@ -20,16 +21,14 @@ the_feature_processor = FeatureProcessor.create(
         feature_file_format=None
 )
 
-# class Reviews(BaseModel):
-#     review: str
-
 @app.post("/teach/")
 async def create_teach(files: List[UploadFile] = File(...), labels: str = Form(...)):
     # Todo: move some of these to long running tasks
     individual_labels = labels.split(',')
+    vw = get_online_learner()
 
     individual_image_features = []
-    for the_file in files:
+    for the_file, label in zip(files, individual_labels):
         print(f"working on {the_file.filename}")
         image = load_image_into_numpy_array(await the_file.read())
         print(f" loaded to numpy array! {image.shape}")
@@ -41,29 +40,23 @@ async def create_teach(files: List[UploadFile] = File(...), labels: str = Form(.
                     )
                 )
         # assert image_features.shape == (1, 62720), "Unexpected ImageNet shape!"
-        
-#         individual_image_features.append(
-#             the_feature_processor.create_features(
-#                 the_feature_processor.process_in_memory_image(
-#                     image
-#                 )
-#         )
-#     )
+        the_example = construct_vw_example(label, image_features)
+        print(
+            the_example
+        )
+        vw.example(the_example)
+        print("\t ... taught an example!")
+
         print(f"... taught {the_file.filename}!")
-    
-#     a_key = get_or_assign_learner()
-#     image_feature_ex = pool_of_learners[a_key].example(
-#         construct_vw_example(TRUE, the_image_features)
-#     )
-#     pool_of_learners[a_key].learn(image_feature_ex)
 
-#     decision = pool_of_learners[a_key].predict(image_feature_ex)
-
-    
     return {
         "files": [file.filename for file in files],
         "labels": individual_labels
     }
+
+@app.post("/predict/")
+async def create_predict(files: List[UploadFile] = File(...)):
+    pass
 
 @app.get("/")
 async def main():
