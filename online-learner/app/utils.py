@@ -98,12 +98,19 @@ class MobileNetFeatureProcessor(FeatureProcessor):
         return features
 
 def construct_vw_example(label, features):
-    return f"{label} | " + np.array2string(
+    prefix = ''
+    if label is not None:
+        prefix = f"{label} | " 
+    the_feature_vector = np.array2string(
         features,
         precision=4,
         separator=' ',
         suppress_small=False
     )[2:-2] # kinda shocked this leaves in brackets
+    vw = get_online_learner()
+    return vw.example(
+        f"{prefix}{the_feature_vector}"
+    )
 
 def load_image_into_numpy_array(data):
     return np.array(Image.open(BytesIO(data)))
@@ -115,7 +122,7 @@ vw = pyvw.vw(quiet=True)
 
 def get_online_learner(session_key=None):
     learner = None
-    if not session_key:
+    if session_key is None:
         # for now
         learner = vw
 

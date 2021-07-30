@@ -21,6 +21,7 @@ the_feature_processor = FeatureProcessor.create(
         feature_file_format=None
 )
 
+
 @app.post("/teach/")
 async def create_teach(files: List[UploadFile] = File(...), labels: str = Form(...)):
     # Todo: move some of these to long running tasks
@@ -44,7 +45,7 @@ async def create_teach(files: List[UploadFile] = File(...), labels: str = Form(.
         print(
             the_example
         )
-        vw.example(the_example)
+        vw.learn(the_example)
         print("\t ... taught an example!")
 
         print(f"... taught {the_file.filename}!")
@@ -56,10 +57,37 @@ async def create_teach(files: List[UploadFile] = File(...), labels: str = Form(.
 
 @app.post("/predict/")
 async def create_predict(files: List[UploadFile] = File(...)):
-    pass
+    vw = get_online_learner()
 
-@app.get("/")
-async def main():
+    the_predictions = []
+    for the_file in files:
+        print(f"working on {the_file.filename}")
+        image = load_image_into_numpy_array(await the_file.read())
+        print(f" loaded to numpy array! {image.shape}")
+
+        image_features =\
+                the_feature_processor.create_features_for_an_image(
+                    the_feature_processor.process_in_memory_image(
+                        image
+                    )
+                )
+    #     # assert image_features.shape == (1, 62720), "Unexpected ImageNet shape!"
+        the_example = construct_vw_example(None, image_features)
+        print(
+            the_example
+        )
+        response =\
+            vw.predict(the_example)
+        print(f"... predicted {the_file.filename}! {response}")
+        the_predictions.append(response)
+
+    return {
+        "the_files": [file.filename for file in files],
+        "the_predictions": the_predictions
+    }
+
+@app.get("/teach/")
+async def get_teach():
     content = """
 <body>
 <form action="/teach/" enctype="multipart/form-data" method="post">
@@ -70,3 +98,15 @@ async def main():
 </body>
     """
     return HTMLResponse(content=content)
+
+@app.get("/predict/")
+async def get_predict():
+    content = """
+<body>
+<form action="/predict/" enctype="multipart/form-data" method="post">
+<input name="files" type="file" multiple>
+<input type="submit">
+</form>
+</body>
+    """
+    return HTMLResponse(content=content)    
